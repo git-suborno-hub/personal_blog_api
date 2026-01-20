@@ -3,6 +3,7 @@ from .database import get_db
 from sqlalchemy.orm import Session
 from . import models
 from .database import engine
+from .routers import articles
 
 app=FastAPI(
     title="personal blog api",
@@ -24,3 +25,5 @@ models.Base.metadata.create_all(bind=engine)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+app.include_router(articles.router)
