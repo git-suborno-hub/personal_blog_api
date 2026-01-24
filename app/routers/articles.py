@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -62,3 +62,36 @@ def get_article(
         raise HTTPException(status_code=404, detail="Article not found")
     
     return article
+
+@router.put(
+    "/{id}",
+    response_model=ArticleResponse,
+    summary="Update an existing article",
+    description="Updates the title, content, and tags of an article by its ID."
+)
+def update_article(
+    id: int,
+    article_update: ArticleCreate,
+    db: Session = Depends(get_db)
+):
+    
+    db_article = db.query(Article).filter(Article.id == id).first()
+    
+    
+    if not db_article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    
+    db_article.title = article_update.title
+    db_article.content = article_update.content
+    
+    
+    if article_update.tags:
+        db_article.tags = ", ".join(article_update.tags)
+    else:
+        db_article.tags = None
+    
+    db.commit()
+    db.refresh(db_article)
+    
+    return db_article
