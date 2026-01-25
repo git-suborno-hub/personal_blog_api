@@ -63,6 +63,7 @@ def get_article(
     
     return article
 
+# PUT endpoint
 @router.put(
     "/{id}",
     response_model=ArticleResponse,
@@ -95,3 +96,26 @@ def update_article(
     db.refresh(db_article)
     
     return db_article
+
+
+# DELETE endpoint
+@router.delete(
+    "/{id}",
+    status_code=200,
+    summary="Delete an article",
+    description="Deletes a specific article by its ID from the database."
+)
+
+def delete_article(
+    id:int,
+    db: Session=Depends(get_db)
+):
+    article=db.query(Article).filter(Article.id==id).first()
+
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found.")
+    
+    db.delete(article)
+    db.commit()
+
+    return {"message": "Successfully deleted."}
