@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Optional
 from app.database import get_db
 from app.models import Article
-from app.schemas.article import ArticleResponse, ArticleCreate
+from app.schemas.article import ArticleResponse, ArticleCreate, PaginatedArticleResponse
 
 router = APIRouter(
     prefix="/articles",
@@ -20,11 +20,18 @@ router = APIRouter(
 )
 
 def create_article(article: ArticleCreate, db: Session=Depends(get_db)):
+    tags_str = None
+    if isinstance(article.tags, list):
+        tags_str=", ".join(article.tags)
+    elif isinstance(article.tags, str):
+        tags_str=article.tags.strip()
+
+        
     db_article=Article(
         title=article.title,
         content=article.content,
-        tags=", ".join(article.tags) if article.tags else None,
-        author="Anonymous"
+        tags=tags_str,
+        author=article.author if article.author else "Anonymous"
     )
 
     db.add(db_article)
@@ -35,14 +42,35 @@ def create_article(article: ArticleCreate, db: Session=Depends(get_db)):
 # GET endpoint
 @router.get(
     "/",
-    response_model=List[ArticleResponse],
-    summary="Get all articles",
-    description="Returns a list of all blog articles from the databse."
+    response_model=PaginatedArticleResponse,
+    summary="Get paginated articles with total count + optional tag filters",
+    description="Returns a paginated list of articles along with the total count."
 )
 
-def get_all_articles(db: Session=Depends(get_db)):
-    articles=db.query(Article).all()
-    return articles
+def get_articles(
+    db: Session = Depends(get_db),
+    tag: Optional[str] = Query(None, description="Filter by tag"),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
+    query = db.query(Article)
+    
+    print(f"Received tag: '{tag}'")  # ← এটা দেখাবে tag আসলেই আসছে কি না
+    
+    if tag:
+        print(f"Applying filter for tag: {tag}")
+        query = query.filter(Article.tags.ilike(f"%{tag}%"))
+        print(f"SQL after filter: {str(query)}")  # ← generated SQL দেখাবে
+    
+    total = query.count()
+    articles = query.offset(offset).limit(limit).all()
+    
+    return {
+        "items": articles,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
 
 
 # GET/articles/{id} endpoint
