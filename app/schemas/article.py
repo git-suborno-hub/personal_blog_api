@@ -13,21 +13,22 @@ class ArticleBase(BaseModel):
 class ArticleCreate(ArticleBase):
     pass
 
-
-class ArticleResponse(ArticleBase):
+class ArticleResponse(BaseModel):
     id: int
-    created_at: datetime
-    # author: str = "Anonymous"  # models.py এর সাথে মিল রাখার জন্য
-    author: str 
+    title: str
+    content: str
+    author: str
     tags: Optional[str] = None
+    created_at: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True,          # SQLAlchemy object → Pydantic (আগের from_orm=True)
-        # json_encoders={datetime: lambda v: v.isoformat()}  # optional
-    )
+    model_config = ConfigDict(from_attributes=True)
+    # class Config:
+    #     from_attributes = True  # এই line টি থাকতে হবে
 
 class PaginatedArticleResponse(BaseModel):
     items: List[ArticleResponse]
     total: int
     limit: int
     offset: int
+
+    model_config = ConfigDict(from_attributes=True)
