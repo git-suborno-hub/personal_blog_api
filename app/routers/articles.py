@@ -6,10 +6,7 @@ from app.models import Article
 from app.schemas.article import ArticleResponse, ArticleCreate, PaginatedArticleResponse
 from app.schemas.response import BaseResponse, MessageResponse, ErrorResponse
 
-router = APIRouter(
-    prefix="/articles",
-    tags=["articles"]
-)
+router = APIRouter()
 
 
 # POST endpoint - Create a new article
