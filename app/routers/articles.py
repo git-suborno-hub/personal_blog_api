@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from app.database import get_db
 from app.models import Article
-from app.schemas.article import ArticleResponse, ArticleCreate, PaginatedArticleResponse
+from app.schemas.article import ArticleResponse, ArticleCreate, PaginatedArticleResponse, ArticleUpdate
 from app.schemas.response import BaseResponse, MessageResponse, ErrorResponse
 
 router = APIRouter()
@@ -148,52 +148,61 @@ def get_article(id: int, db: Session = Depends(get_db)):
     "/{id}",
     response_model=BaseResponse[ArticleResponse],
     summary="Update an existing article",
-    description="Updates the title, content, and tags of an article by its ID."
+    description="Partially updates the title, content, tags, and author of an article by its ID."
 )
 def update_article(
     id: int,
-    article_update: ArticleCreate,
+    article_update: ArticleUpdate,
     db: Session = Depends(get_db)
 ):
-    try:
-        db_article = db.query(Article).filter(Article.id == id).first()
+    db_article = db.query(Article).filter(Article.id == id).first()
 
-        if not db_article:
-            raise HTTPException(
-                status_code=404,
-                detail={"success": False, "error": "Article not found"}
-            )
+    if not db_article:
+        raise HTTPException(
+            status_code=404,
+            detail={"success": False, "error": "Article not found"}
+        )
 
-        db_article.title = article_update.title
-        db_article.content = article_update.content
+    # শুধু পাঠানো ফিল্ডগুলো
+    update_data = article_update.model_dump(exclude_unset=True)
 
-        if article_update.tags is not None:
-            db_article.tags = ", ".join(article_update.tags) if article_update.tags else None
-
-        db.commit()
-        db.refresh(db_article)
-
-        return BaseResponse[ArticleResponse](
-            success=True,
-            data={
-                "id": db_article.id,
-                "title": db_article.title,
-                "content": db_article.content,
-                "author": db_article.author,
-                "tags": db_article.tags,
-                "created_at": db_article.created_at.isoformat() if db_article.created_at else None
+    # Empty update চেক
+    if not update_data:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "success": False,
+                "error": "At least one field must be provided for update"
             }
         )
-        
+
+    # আপডেট করা
+    for key, value in update_data.items():
+        setattr(db_article, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_article)
     except Exception as e:
+        # শুধু ডাটাবেস/অন্যান্য unexpected error ধরবে
+        # 400/404 ইত্যাদি এখানে আসবে না
         print(f"PUT /articles/{id} error: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail={
-                "success": False,
-                "error": "Something went wrong while updating the article. Please try again later."
-            }
+            detail={"success": False, "error": "Something went wrong while updating the article. Please try again later."}
         )
+
+    return BaseResponse[ArticleResponse](
+        success=True,
+        data={
+            "id": db_article.id,
+            "title": db_article.title,
+            "content": db_article.content,
+            "author": db_article.author,
+            "tags": db_article.tags,
+            "created_at": db_article.created_at.isoformat() if db_article.created_at else None
+        }
+    )
 
 
 # DELETE endpoint - Delete an article
