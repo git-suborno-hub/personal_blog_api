@@ -59,25 +59,35 @@ def create_article(article: ArticleCreate, db: Session = Depends(get_db)):
 @router.get(
     "/",
     response_model=BaseResponse[PaginatedArticleResponse],
-    summary="Get articles with pagination and tag filter"
+    summary="Get articles with page-based pagination and tag filter"
 )
 def get_articles(
     db: Session = Depends(get_db),
     tag: Optional[str] = Query(None, description="Filter by tag"),
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
+    limit: int = Query(10, ge=1, le=100, description="Items per page (1-100)")
 ):
-    try: 
+    try:
+        # Step 1: Total count (ফিল্টার apply করার পর গোনা উচিত)
         query = db.query(Article)
-
+        
         if tag:
             query = query.filter(Article.tags.ilike(f"%{tag}%"))
+        
+        total = query.count()  # ← মেন্টরের ধাপ ১
 
-        total = query.count()
-        articles = query.offset(offset).limit(limit).all()
+        # Step 2: Skip calculation (offset-এর বদলে page থেকে হিসাব)
+        skip = (page - 1) * limit  # ← মেন্টরের ধাপ ২
 
+        # Step 3: ডাটা ফেচ
+        articles = query.offset(skip).limit(limit).all()
+
+        # Response প্যাকেট (মেন্টরের ধাপ ৩)
         paginated = {
-            "items": [
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "articles": [
                 {
                     "id": a.id,
                     "title": a.title,
@@ -87,22 +97,23 @@ def get_articles(
                     "created_at": a.created_at.isoformat() if a.created_at else None
                 }
                 for a in articles
-            ],
-            "total": total,
-            "limit": limit,
-            "offset": offset
+            ]
         }
+
+        # Optional: total_pages যোগ করা (প্রো টিপ)
+        total_pages = (total + limit - 1) // limit if limit > 0 else 1
+        paginated["total_pages"] = total_pages
 
         return BaseResponse[PaginatedArticleResponse](
             success=True,
             data=paginated
         )
-        
+
     except Exception as e:
         print(f"GET articles error: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail={"success": False, "error": "Unable to fetch articles right now. Try again later."}
+            detail={"success": False, "error": "Unable to fetch articles. Try again later."}
         )
 
 

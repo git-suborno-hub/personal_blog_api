@@ -80,7 +80,9 @@ class ArticleResponse(ArticleBase):
 class PaginatedArticleResponse(BaseModel):
     items: List[ArticleResponse]
     total: int
+    page: int
     limit: int
-    offset: int
+    total_pages: int
+    articles: List[ArticleResponse]
 
     model_config = ConfigDict(from_attributes=True)
