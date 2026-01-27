@@ -35,9 +35,9 @@ def create_article(article: ArticleCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(db_article)
 
-        return BaseResponse[ArticleResponse](
-            success=True,
-            data={
+        return {
+            "success": True,
+            "data": {
                 "id": db_article.id,
                 "title": db_article.title,
                 "content": db_article.content,
@@ -45,7 +45,7 @@ def create_article(article: ArticleCreate, db: Session = Depends(get_db)):
                 "tags": db_article.tags,
                 "created_at": db_article.created_at.isoformat() if db_article.created_at else None
             }
-        )
+        }
     
     except Exception as e:
         print(f"POST article error: {str(e)}")
@@ -68,26 +68,19 @@ def get_articles(
     limit: int = Query(10, ge=1, le=100, description="Items per page (1-100)")
 ):
     try:
-        # Step 1: Total count (ফিল্টার apply করার পর গোনা উচিত)
         query = db.query(Article)
         
         if tag:
             query = query.filter(Article.tags.ilike(f"%{tag}%"))
         
-        total = query.count()  # ← মেন্টরের ধাপ ১
+        total = query.count()  
 
-        # Step 2: Skip calculation (offset-এর বদলে page থেকে হিসাব)
-        skip = (page - 1) * limit  # ← মেন্টরের ধাপ ২
+        skip = (page - 1) * limit  
 
-        # Step 3: ডাটা ফেচ
         articles = query.offset(skip).limit(limit).all()
 
-        # Response প্যাকেট (মেন্টরের ধাপ ৩)
         paginated = {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "articles": [
+            "items": [
                 {
                     "id": a.id,
                     "title": a.title,
@@ -97,10 +90,14 @@ def get_articles(
                     "created_at": a.created_at.isoformat() if a.created_at else None
                 }
                 for a in articles
-            ]
+            ],
+            "meta":{
+                "page": page,
+                "limit": limit,
+                "total": total,
+            }
         }
-
-        # Optional: total_pages যোগ করা (প্রো টিপ)
+        
         total_pages = (total + limit - 1) // limit if limit > 0 else 1
         paginated["total_pages"] = total_pages
 
@@ -133,9 +130,9 @@ def get_article(id: int, db: Session = Depends(get_db)):
                 detail={"success": False, "error": "Article not found"}
             )
 
-        return BaseResponse[ArticleResponse](
-            success=True,
-            data={
+        return {
+            "success": True,
+            "data": {
                 "id": article.id,
                 "title": article.title,
                 "content": article.content,
@@ -143,7 +140,7 @@ def get_article(id: int, db: Session = Depends(get_db)):
                 "tags": article.tags,
                 "created_at": article.created_at.isoformat() if article.created_at else None
             }
-        )
+        }
         
     except Exception as e:
         print(f"GET article {id} error: {str(e)}")
@@ -203,9 +200,8 @@ def update_article(
             detail={"success": False, "error": "Something went wrong while updating the article. Please try again later."}
         )
 
-    return BaseResponse[ArticleResponse](
-        success=True,
-        data={
+    return {
+        "data": {
             "id": db_article.id,
             "title": db_article.title,
             "content": db_article.content,
@@ -213,7 +209,7 @@ def update_article(
             "tags": db_article.tags,
             "created_at": db_article.created_at.isoformat() if db_article.created_at else None
         }
-    )
+    }
 
 
 # DELETE endpoint - Delete an article

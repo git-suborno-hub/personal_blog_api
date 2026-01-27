@@ -76,6 +76,10 @@ class ArticleResponse(ArticleBase):
 
     model_config = ConfigDict(from_attributes=True)
     
+class PaginationMeta(BaseModel):
+    page: int
+    limit: int
+    total: int    
 
 class PaginatedArticleResponse(BaseModel):
     items: List[ArticleResponse]
@@ -84,5 +88,6 @@ class PaginatedArticleResponse(BaseModel):
     limit: int
     total_pages: int
     articles: List[ArticleResponse]
+    meta: PaginationMeta
 
     model_config = ConfigDict(from_attributes=True)
