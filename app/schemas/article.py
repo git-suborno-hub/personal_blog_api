@@ -9,20 +9,24 @@ class ArticleBase(BaseModel):
         ...,
         min_length=5,
         max_length= 100,
+        example="Best Practices for Building APIs in 2025 with FastAPI",
         description="Article title must be between 5 and 100 character."
     )
     content: str = Field(
         ...,
         min_length=10,
+        example="In this article we will discuss using Pydantic v2, SQLAlchemy 2.0, JWT authentication, and Docker with FastAPI...",
         description="Article content must be at least 10 characters long."
     )
     tags: Optional[List[str]] = Field(
         default= None,
+        example=["fastapi", "python", "api", "backend"],
         description="List of tags..."
     )
     author: Optional[str] = Field(
         default=None,
         max_length=50,
+        example="Suborno",
         description="Author name"
     )
     

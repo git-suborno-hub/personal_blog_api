@@ -12,3 +12,4 @@ app.include_router(
     prefix="/api/v1/articles",   
     tags=["articles"]            
 )
+
