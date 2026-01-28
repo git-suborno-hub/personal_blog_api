@@ -3,19 +3,20 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from app.config import settings
 
-load_dotenv()  # .env ফাইল থেকে ভেরিয়েবল লোড
+load_dotenv()  
 
-# Database URL .env থেকে নেওয়া
+
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("DATABASE_URL .env ফাইলে পাওয়া যায়নি। দয়া করে চেক করুন।")
+    raise ValueError("Don't get DATABASE_URL in the .env file. Please recheck it.")
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    echo=False,               # True করলে SQL query দেখা যাবে (development-এ সুবিধা)
-    pool_pre_ping=True,       # connection চেক করে stale connection এড়ায়
+    settings.DATABASE_URL,
+    echo=False,               
+    pool_pre_ping=True,       
 )
 
 SessionLocal = sessionmaker(
