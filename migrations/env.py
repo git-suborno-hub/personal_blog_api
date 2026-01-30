@@ -4,8 +4,8 @@ from logging.config import fileConfig
 from sqlalchemy import create_engine
 from alembic import context
 
-# তোমার মডেল import করো — এটা খুব গুরুত্বপূর্ণ!
-from app.models import Base  # যদি Article model এখানে থাকে
+# তোমার models import করো — এটা অবশ্যই থাকতে হবে
+from app.models import Base  # Article model যেখানে আছে, সেই ফাইল থেকে import করো
 
 # Alembic Config object
 config = context.config
@@ -14,13 +14,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# তোমার SQLAlchemy models-এর metadata — এটা None রাখলে কোনো টেবিল তৈরি হবে না
-target_metadata = Base.metadata
+# এখানে target_metadata = None এর বদলে এটা দাও
+target_metadata = Base.metadata  # এটা গুরুত্বপূর্ণ! None রাখলে কোনো টেবিল generate হবে না
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    # offline mode-এও env থেকে URL নেবো (ini-এর উপর নির্ভর না করে)
     url = os.getenv("DATABASE_URL")
     if not url:
         raise ValueError("DATABASE_URL not set in environment variables!")
@@ -51,7 +50,7 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata
+            target_metadata=target_metadata  # এখানেও target_metadata দাও
         )
 
         with context.begin_transaction():
