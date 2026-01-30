@@ -64,6 +64,13 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    
+    db_url=os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL not set in environment!")
+    
+    print(f"Alembic using DATABASE_URL:{db_url}")
+    connectable=create_engine(db_url)
 
     with connectable.connect() as connection:
         context.configure(
