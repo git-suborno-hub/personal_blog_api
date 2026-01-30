@@ -4,19 +4,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
+from app.logger import logger 
 
 load_dotenv()  
 
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
+logger.info(f"Using DATABASE_URL from env: {DATABASE_URL}")
 
-if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("Don't get DATABASE_URL in the .env file. Please recheck it.")
+if not DATABASE_URL:
+    logger.error("No DATABASE_URL found! Falling back or raising error.")
+    raise ValueError("DATABASE_URL environment variable is required!")
 
 engine = create_engine(
-    settings.DATABASE_URL,
-    echo=False,               
-    pool_pre_ping=True,       
+    DATABASE_URL,
+    echo=True,                  
 )
 
 SessionLocal = sessionmaker(
